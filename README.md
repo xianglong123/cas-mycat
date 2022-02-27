@@ -243,6 +243,27 @@
 
 ### 一致性hash算法
     一致性hash算法有效解决了分布式数据的扩展问题
+    <table name="tb_order" primaryKey="id" dataNode="dn1,dn2,dn3" rule="sharding-by-murmur" />
+```xml
+	<tableRule name="sharding-by-murmur">
+		<rule>
+			<columns>id</columns>
+			<algorithm>murmur</algorithm>
+		</rule>
+	</tableRule>
+
+	<function name="murmur"
+		class="io.mycat.route.function.PartitionByMurmurHash">
+		<property name="seed">0</property><!-- 默认是0 -->
+		<property name="count">3</property><!-- 要分片的数据库节点数量，必须指定，否则没法分片 -->
+		<property name="virtualBucketTimes">160</property><!-- 一个实际的数据库节点被映射为这么多虚拟节点，默认是160倍，也就是虚拟节点数是物理节点数的160倍 -->
+		<!-- <property name="weightMapFile">weightMapFile</property> 节点的权重，没有指定权重的节点默认是1。以properties文件的格式填写，以从0开始到count-1的整数值也就是节点索引为key，以节点权重值为值。所有权重值必须是正整数，否则以1代替 -->
+		<!-- <property name="bucketMapPath">/etc/mycat/bucketMapPath</property> 
+			用于测试时观察各物理节点与虚拟节点的分布情况，如果指定了这个属性，会把虚拟节点的murmur hash值与物理节点的映射按行输出到这个文件，没有默认值，如果不指定，就不会输出任何东西 -->
+	</function>
+
+```
+
  
  
  
