@@ -111,4 +111,46 @@ insert into tb_u (username, age) values ('Test400001', 21);
 insert into tb_u (username, age) values ('Test500001', 22);
 
 
+-- 应用指定算法分区
+create table tb_app
+(
+    id varchar(10) not null comment 'ID',
+    name varchar(200) default NULL comment '名称',
+    constraint tb_app_pk
+        primary key (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+insert into tb_app (id, name) values ('00-00001', 'Testx00001');
+insert into tb_app (id, name) values ('00-00002', 'Test100001');
+insert into tb_app (id, name) values ('01-00001', 'Test200001');
+insert into tb_app (id, name) values ('01-00002', 'Test300001');
+insert into tb_app (id, name) values ('02-00001', 'Test400001');
+insert into tb_app (id, name) values ('02-00002', 'Test500001');
+
+-- 字符串hash解析算法
+create table tb_strhash
+(
+    name varchar(20) NOT NULL comment '名称',
+    content varchar(100)  NULL comment '内容',
+    constraint tb_app_pk
+        primary key (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+insert into tb_strhash (name, content) values ('T1001', UUID());
+insert into tb_strhash (name, content) values ('ROSE', UUID());
+insert into tb_strhash (name, content) values ('JERRY', UUID());
+insert into tb_strhash (name, content) values ('CRISTINA', UUID());
+insert into tb_strhash (name, content) values ('TOMCAT', UUID());
+
+-- 一致性hash算法
+create table tb_order
+(
+    id int(11) primary key,
+    money int(11),
+    content varchar(200)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+
+
 

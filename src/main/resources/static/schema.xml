@@ -9,6 +9,9 @@
 		<table name="tb_brand" primaryKey="id" dataNode="dn1,dn2,dn3" rule="sharding-by-long-hash" />
 		<table name="tb_mod_range" primaryKey="id" dataNode="dn1,dn2,dn3" rule="sharding-by-pattern" />
 		<table name="tb_u" primaryKey="username" dataNode="dn1,dn2,dn3" rule="sharding-by-prefixpattern" />
+		<table name="tb_app" primaryKey="id" dataNode="dn1,dn2,dn3" rule="sharding-by-substring" />
+		<table name="tb_strhash" primaryKey="name" dataNode="dn1,dn2" rule="sharding-by-stringhash" />
+		<table name="tb_order" primaryKey="id" dataNode="dn1,dn2,dn3" rule="sharding-by-murmur" />
 	</schema>
 	
 	<dataNode name="dn1" dataHost="localhost1" database="partition_db_1" />

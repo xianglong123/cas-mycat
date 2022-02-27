@@ -207,4 +207,134 @@
     65-96=2    
 
 ### 应用指定算法
-    
+    由运行阶段由应用自主决定路由到哪个分片，直接根据字符子穿（必须是数字）计算分区号，配置如下；
+    <table name="tb_app" primaryKey="id" dataNode="dn1,dn2,dn3" rule="sharding-by-substring" />
+```xml
+	<tableRule name="sharding-by-substring">
+		<rule>
+			<columns>id</columns>
+			<algorithm>sharding-by-substring</algorithm>
+		</rule>
+	</tableRule>
+	<function name="sharding-by-substring" class="io.mycat.route.function.PartitionDirectBySubString">
+		<property name="startIndex">0</property> 开始的索引
+		<property name="size">2</property>       截取的字段长度
+		<property name="partitionCount">3</property> 总共由多少实例
+		<property name="defaultPartition">0</property> 找不到走哪台
+	</function>
+
+```
+
+### 字符串hash解析算法
+    <table name="tb_strhash" primaryKey="name" dataNode="dn1,dn2" rule="sharding-by-stringhash" />
+```xml
+	<tableRule name="sharding-by-stringhash">
+		<rule>
+			<columns>name</columns>
+			<algorithm>sharding-by-stringhash</algorithm>
+		</rule>
+	</tableRule>
+	<function name="sharding-by-stringhash" class="io.mycat.route.function.PartitionByString">
+		<property name="partitionLength">512</property>
+		<property name="partitionCount">2</property>
+		<property name="hashSlice">0:2</property>
+	</function>
+```
+
+### 一致性hash算法
+    一致性hash算法有效解决了分布式数据的扩展问题
+ 
+ 
+ 
+### mysql 自带分区
+    水平分区Partition有以下几种模式
+    Range（范围） – 这种模式允许DBA将数据划分不同范围。例如DBA可以将一个表通过年份划分成三个分区，80年代（1980’s）的数据，90年代（1990’s）的数据以及任何在2000年（包括2000年）后的数据。
+    Hash（哈希） – 这中模式允许DBA通过对表的一个或多个列的Hash Key进行计算，最后通过这个Hash码不同数值对应的数据区域进行分区，。例如DBA可以建立一个对表主键进行分区的表。
+    Key（键值） – 上面Hash模式的一种延伸，这里的Hash Key是MySQL系统产生的。
+    List（预定义列表） – 这种模式允许系统通过DBA定义的列表的值所对应的行数据进行分割。例如：DBA建立了一个横跨三个分区的表，分别根据2004年2005年和2006年值所对应的数据。
+    Composite（复合模式） - 很神秘吧，哈哈，其实是以上模式的组合使用而已，就不解释了。举例：在初始化已经进行了Range范围分区的表上，我们可以对其中一个分区再进行hash哈希分区。
+
+```sql
+PARTITION BY RANGE (YEAR(createtime))
+(PARTITION p2015 VALUES LESS THAN (2016) ENGINE = InnoDB,
+PARTITION p2016 VALUES LESS THAN (2017) ENGINE = InnoDB,
+PARTITION p2017 VALUES LESS THAN (2018) ENGINE = InnoDB,
+PARTITION p2018 VALUES LESS THAN MAXVALUE ENGINE = InnoDB
+);
+
+
+select YEAR('2017-01-01');
+
+insert into message_all (id, createtime) values (1, DATE_SUB(NOW(), INTERVAL 6 YEAR ));
+insert into message_all (id, createtime) values (2, DATE_SUB(NOW(), INTERVAL 7 YEAR ));
+insert into message_all (id, createtime) values (3, DATE_SUB(NOW(), INTERVAL 8 YEAR ));
+insert into message_all (id, createtime) values (4, DATE_SUB(NOW(), INTERVAL 6 YEAR ));
+insert into message_all (id, createtime) values (5, DATE_SUB(NOW(), INTERVAL 6 YEAR ));
+insert into message_all (id, createtime) values (6, DATE_SUB(NOW(), INTERVAL 6 YEAR ));
+insert into message_all (id, createtime) values (7, DATE_SUB(NOW(), INTERVAL 6 YEAR ));
+insert into message_all (id, createtime) values (8, DATE_SUB(NOW(), INTERVAL 6 YEAR ));
+
+insert into message_all (id, createtime) values (8, DATE_SUB(NOW(), INTERVAL 1 YEAR ));
+insert into message_all (id, createtime) values (8, DATE_SUB(NOW(), INTERVAL 2 YEAR ));
+insert into message_all (id, createtime) values (8, DATE_SUB(NOW(), INTERVAL 3 YEAR ));
+insert into message_all (id, createtime) values (8, DATE_SUB(NOW(), INTERVAL 4 YEAR ));
+insert into message_all (id, createtime) values (8, DATE_SUB(NOW(), INTERVAL 5 YEAR ));
+
+insert into message_all (id, createtime) values (8, DATE_SUB(NOW(), INTERVAL -5 YEAR ));
+
+select DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s');
+select DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s');
+select DATE_SUB(NOW(), INTERVAL 6.3 YEAR);
+select DATE_SUB(NOW(), INTERVAL 4 YEAR);
+
+
+select * from message_all where createtime < DATE_SUB(NOW(), INTERVAL 4 YEAR ) and createtime > '2016-02-19 19:52:25';
+explain select * from message_all where createtime < DATE_SUB(NOW(), INTERVAL 4 YEAR ) and createtime > '2016-02-19 19:52:25';
+
+
+-- 删除分区
+ALTER TABLE message_all DROP PARTITION p2018;
+
+-- 清空分区数据
+ALTER TABLE message_all TRUNCATE PARTITION p2017;
+
+-- 新增分区
+ALTER TABLE message_all ADD PARTITION
+    (
+    PARTITION p2020 VALUES LESS THAN (2020),
+    PARTITION p2021 VALUES LESS THAN (2021),
+    PARTITION p2022 VALUES LESS THAN (2022)
+    );
+
+-- 重定义（可实现：分区拆分、合并、重命名）
+ALTER TABLE message_all REORGANIZE PARTITION p201601,p201602,p201603,p201604 INTO
+    (
+    PARTITION p2016012 VALUES less than(TO_DAYS('2016-03-01')),
+    PARTITION p2016034 VALUES less than(TO_DAYS('2016-05-01'))
+    );
+
+-- 修改分区规则
+ALTER TABLE message_all PARTITION BY RANGE (to_days(createtime))
+    (
+    PARTITION p2015 VALUES LESS THAN (to_days('2016-01-01')),
+    PARTITION p2016 VALUES LESS THAN (to_days('2017-01-01')),
+    PARTITION p2017 VALUES LESS THAN (to_days('2018-01-01')),
+    PARTITION p2018 VALUES LESS THAN MAXVALUE
+    );
+-- https://blog.csdn.net/pete_lee/article/details/59113885
+
+-- 检查/查看你的分区
+SHOW TABLE STATUS LIKE 'message_all';
+
+SELECT * FROM information_schema.partitions WHERE table_name='message_all';
+
+SHOW CREATE TABLE message_all;
+
+
+-- 指定分区查
+SELECT * FROM message_all PARTITION (p2020)
+
+
+```
+
+
