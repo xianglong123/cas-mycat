@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
+
+	<schema name="PARTITION_DB" checkSQLschema="false" sqlMaxLimit="100">
+		<table name="tb_log" primaryKey="id" dataNode="dn1,dn2,dn3" rule="auto-sharding-long" />
+		<table name="tb_user" primaryKey="id" dataNode="dn1,dn2,dn3" rule="sharding-by-enum-status" />
+		<table name="tb_stu" primaryKey="id" dataNode="dn1,dn2,dn3" rule="auto-sharding-rang-mod" />
+		<table name="tb_brand" primaryKey="id" dataNode="dn1,dn2,dn3" rule="sharding-by-long-hash" />
+		<table name="tb_mod_range" primaryKey="id" dataNode="dn1,dn2,dn3" rule="sharding-by-pattern" />
+		<table name="tb_u" primaryKey="username" dataNode="dn1,dn2,dn3" rule="sharding-by-prefixpattern" />
+	</schema>
+	
+	<dataNode name="dn1" dataHost="localhost1" database="partition_db_1" />
+	<dataNode name="dn2" dataHost="localhost1" database="partition_db_2" />
+	<dataNode name="dn3" dataHost="localhost1" database="partition_db_3" />
+	
+	<dataHost name="localhost1" maxCon="1000" minCon="10" balance="0"
+			  writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+		
+		<heartbeat>select user()</heartbeat>
+		
+		<writeHost host="hostM1" url="localhost:3306" user="root"
+				   password="1391086179xl..">
+			<readHost host="hostS2" url="localhost:3306" user="root" password="1391086179xl.." />
+		</writeHost>
+	</dataHost>
+</mycat:schema>
+
